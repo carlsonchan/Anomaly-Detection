@@ -7,7 +7,9 @@ DataDf <- read.table("test.txt", header = T, sep = ",")
 class(DataDf)
 
 install.packages("lubridate")
+install.packages("zoo")
 library(lubridate)
+library(zoo)
 mydate <- DataDf$Date
 myNewDate <- dmy(mydate)
 DataDf$Date <- myNewDate
@@ -20,11 +22,18 @@ myNewTime <- as.POSIXct(myTime,format="%H:%M:%S")
 x <- format(myNewTime,"%H:%M:%S")
 DataDf$Time <- x
 
-# Aggregate Global active power and get the mean each day
+# Aggregate Global active power and get the mean of each day
 meanPower <-data.frame(aggregate(DataDf[,3], list(DataDf$Date),mean))
 
+# Convert meanPower into a zoo object
+xm<-zoo(meanPower$x, meanPower$Group.1)
+
+# Pass in zoo object and window size for more info go to https://cran.r-project.org/web/packages/zoo/zoo.pdf
+rollingMeanData <- rollmean(xm,3)
+plot(rollingMeanData, type = "o")  ## Index plot
+
 # Plotting mean to look for random drops
-plot(meanPower$x, type = "o")  ## Index plot
+plot(meanPower$x, type = "o") 
 
 # Split data set into month (list)
 newDataDf<-split(DataDf, format(DataDf$Date, "%Y-%m"))
