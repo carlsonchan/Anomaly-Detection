@@ -31,6 +31,27 @@ returnMinute<-function(a){
   
 }
 
+#Created Function for Point Anomalies using the vector array to compare the values
+findPoint<-function(a,value){
+  v<-as.vector(a)
+  x<-c(v$x)
+  for (i in 1:length(x)) { 
+    if(i+1==length(x)){
+      break
+    }
+    t1=x[i]
+    t2=x[i+1]
+    diff=t2-t1
+    if(diff>value){
+      print("Anomaly")
+    }
+    if(diff<value){
+      print("Normal")
+    }
+  }
+ 
+}
+
 require(zoo)
 
 
@@ -42,13 +63,18 @@ DataDf$Hour<-returnHour(DataDf$Time)
 
 
 #Splitting the data into seasons 
+
 summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8 & DataDf$Hour>=16 & DataDf$day=='Friday'),]
 winter<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12& DataDf$day=='Friday' )]
 spring<-DataDf[which(DataDf$Month>=1 & DataDf$Month<=4 & DataDf$day=='Friday')]
 
 #Finding Point Anomalies
-p_a<-zoo(c(summer$Voltage))
+p_a<-zoo(c(summer$Global_active_power))
 x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
+update<-data.frame(x)
+#x<-findPoint(update,0.5)
+
+#Writing the data frame to a file
 write.table(x,"x.txt",sep="\t",row.names=TRUE)
 write.table(summer,"summer.txt",sep="\t",row.names=TRUE)
 
@@ -66,7 +92,7 @@ print(train$DateTime)
 ############################################### Global Reactive power and active power 
 
 ggplot()+
-  layer(data = DataDf, mapping = aes(x=Global_reactive_power, y=Global_active_power), geom = "point",stat="identity", position = position_identity())
+  layer(data = summer, mapping = aes(x=Global_reactive_power, y=Global_active_power), geom = "point",stat="identity", position = position_identity())
 
 cor(DataDf$Global_reactive_power, DataDf$Global_active_power, use = "complete.obs", method = "pearson")
 v_mean <- mean(DataDf$Global_reactive_power, na.rm = TRUE)
