@@ -6,7 +6,7 @@ library(lubridate)
 class(DataDf)
 library(ggplot2)
 head(DataDf)
-setwd("/Users/zeeshan/Desktop/R")
+setwd("/Users/zeeshan/Desktop/cmpt-318-group4")
 getwd()
 
 returnMonth <- function(a){
@@ -15,6 +15,7 @@ returnMonth <- function(a){
   new<-as.numeric(x)
   return (new)
 }
+
 
 returnHour<-function(a){
   Time<-factor(a)
@@ -30,6 +31,14 @@ returnMinute<-function(a){
   return (update)
   
 }
+
+returnYear<-function(a){
+  x <- format(as.Date(a, format="%d/%m/%Y"),"%Y")
+  new<-as.numeric(x)
+  return (new)
+  
+}
+
 
 #Created Function for Point Anomalies using the vector array to compare the values
 findPoint<-function(a,value){
@@ -56,17 +65,16 @@ require(zoo)
 
 
 #Printing Friday evening 
-DataDf <- read.table("test.txt", header = T, sep = ",")
+DataDf <- read.table("train.txt", header = T, sep = ",")
 DataDf$day <- weekdays(as.Date(DataDf$Date,'%d/%m/%Y'))
 DataDf$Month<-returnMonth(as.Date(DataDf$Date))
 DataDf$Hour<-returnHour(DataDf$Time)
-
+DataDf$year<-returnYear(DataDf$Date)
 
 #Splitting the data into seasons 
-
-summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8 & DataDf$Hour>=16 & DataDf$day=='Friday'),]
-winter<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12& DataDf$day=='Friday' )]
-spring<-DataDf[which(DataDf$Month>=1 & DataDf$Month<=4 & DataDf$day=='Friday')]
+summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8 & DataDf$Hour>=16 & DataDf$day=='Friday' & DataDf$year>=2007 & DataDf$year<=2008),]
+winter<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12 & DataDf$day=='Friday' ),]
+spring<-DataDf[which(DataDf$Month>=1 & DataDf$Month<=4 & DataDf$day=='Friday'),]
 
 #Finding Point Anomalies
 p_a<-zoo(c(summer$Global_active_power))
@@ -86,7 +94,7 @@ write.table(newdata,"Update.txt",sep="\t",row.names=TRUE)
 print(newdata)
 #colnames(train) <- c("DateTime", "Global_active_power")
 #train$DateTime <- paste(train$Date, train$Time)
-print(train$DateTime)
+
 
 
 ############################################### Global Reactive power and active power 
