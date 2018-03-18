@@ -3,9 +3,12 @@ library(xts)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(caret)
 class(DataDf)
 library(ggplot2)
 head(DataDf)
+set.seed(100)
+
 setwd("/Users/zeeshan/Desktop/cmpt-318-group4")
 getwd()
 
@@ -15,8 +18,6 @@ returnMonth <- function(a){
   new<-as.numeric(x)
   return (new)
 }
-
-
 returnHour<-function(a){
   Time<-factor(a)
   Time_1<-hms(as.character(Time))
@@ -29,16 +30,13 @@ returnMinute<-function(a){
   Time_1<-hms(as.character(Time))
   update<-minute(Time_1)
   return (update)
-  
 }
 
 returnYear<-function(a){
   x <- format(as.Date(a, format="%d/%m/%Y"),"%Y")
   new<-as.numeric(x)
   return (new)
-  
 }
-
 
 #Created Function for Point Anomalies using the vector array to compare the values
 findPoint<-function(a,value){
@@ -60,10 +58,7 @@ findPoint<-function(a,value){
   }
  
 }
-
 require(zoo)
-
-
 #Printing Friday evening 
 DataDf <- read.table("train.txt", header = T, sep = ",")
 DataDf$day <- weekdays(as.Date(DataDf$Date,'%d/%m/%Y'))
@@ -72,19 +67,47 @@ DataDf$Hour<-returnHour(DataDf$Time)
 DataDf$year<-returnYear(DataDf$Date)
 
 #Splitting the data into seasons 
-summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8 & DataDf$Hour>=16 & DataDf$day=='Friday' & DataDf$year>=2007 & DataDf$year<=2008),]
-winter<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12 & DataDf$day=='Friday' ),]
+summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8  & DataDf$day=='Friday' & DataDf$year>=2007 & DataDf$year<=2008),]
+winter<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12 & DataDf$day=='Friday'),]
 spring<-DataDf[which(DataDf$Month>=1 & DataDf$Month<=4 & DataDf$day=='Friday'),]
 
+#Splitting the data into training and test dataset for the summer
+dt = sort(sample(nrow(summer), nrow(summer)*.7))
+train<-summer[dt,]
+test<-summer[-dt,]
+
+
+print(test)
 #Finding Point Anomalies
 p_a<-zoo(c(summer$Global_active_power))
 x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
 update<-data.frame(x)
-#x<-findPoint(update,0.5)
+
+#Finding Max and Min of Columns in Dataset to find anomalies ( Max and Min from Train to find anomalies in the test dataset)
+find_min<-min(train$Global_active_power)
+find_max<-max(train$Global_active_power)
+x<-c(test$Global_active_power)
+for(i in 1:length(x)){
+  
+  if (x[i]>find_max){ # If the value is greater than the max of the training set we put it as an anomaly
+    test$set[i]="Anomaly"
+    
+  }
+  else if (x[i]<find_min)
+  {
+    test$set[i]="Anomaly"
+  }
+  else
+  {
+    test$set[i]="Normal"
+  }
+}
+
 
 #Writing the data frame to a file
 write.table(x,"x.txt",sep="\t",row.names=TRUE)
 write.table(summer,"summer.txt",sep="\t",row.names=TRUE)
+write.table(test$set,"testanomaly.txt",sep="\t",row.names=TRUE)
 
 
 newdata <- DataDf[ which(DataDf$day=='Friday' & DataDf$Hour>=16), ]
