@@ -36,26 +36,28 @@ returnYear<-function(a){
   return (new)
 }
 
-#Created Function for Point Anomalies using the vector array to compare the values
-findPoint<-function(a,value){
+#Moving Average Point Anomaly Detection
+findPoint<-function(a,threshold){
   v<-as.vector(a)
   x<-c(v$x)
-  for (i in 1:length(x)) { 
-    if(i+1==length(x)){
-      break
+  print(x[1])
+  for (i in 2:length(x)) { 
+    t1=x[i]  #current Value
+    t2=x[i-1] # prev value
+    diff=t1-t2
+    if(diff>threshold){
+      a$detection[i]<-"Anomaly"
+      print(t1)
+      print(t2)
     }
-    t1=x[i]
-    t2=x[i+1]
-    diff=t2-t1
-    if(diff>value){
-      print("Anomaly")
-    }
-    if(diff<value){
-      print("Normal")
+    if(diff<threshold){
+      a$detection[i]<-"Normal"
     }
   }
+  return (a)
 }
 
+#Finding Anomalies using Min, Max from train to test 
 find_point<-function(train,test,col){
   find_min<-min(train[,col],na.rm=TRUE)
   find_max<-max(train[,col],na.rm=TRUE)
@@ -80,7 +82,7 @@ find_point<-function(train,test,col){
 }
 
 require(zoo)
-#Adding Columns to Dataset to help with the Data
+#Adding Columns to Dataset to help subset the Data
 DataDf <- read.table("train.txt", header = T, sep = ",")
 DataDf$day <- weekdays(as.Date(DataDf$Date,'%d/%m/%Y'))
 DataDf$Month<-returnMonth(as.Date(DataDf$Date))
@@ -97,21 +99,21 @@ dt = sort(sample(nrow(summer), nrow(summer)*.7))
 train<-summer[dt,]
 test<-summer[-dt,]
 
-#Finding Point Anomalies
+#Finding Point Anomalies Vector using Moving Average Technique
 p_a<-zoo(c(summer$Global_active_power))
 x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
 update<-data.frame(x)
 
 #Finding Anomalies using Max and Min of Training Set 
 b<-find_point(train,test,'Voltage')
+c<-findPoint(update,0.5)
 
 #Writing the data frame to a file
 write.table(x,"x.txt",sep="\t",row.names=TRUE)
 write.table(summer,"summer.txt",sep="\t",row.names=TRUE)
 write.table(b,"testanomaly.txt",sep="\t",row.names=TRUE)
 write.table(train,"updated_train.txt",sep="\t",row.names=TRUE)
-
-
+write.table(c,"AverageAnomalies.txt",sep="\t",row.names=TRUE)
 ############################################### Global Reactive power and active power 
 
 ggplot()+
