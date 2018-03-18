@@ -7,7 +7,7 @@ library(caret)
 class(DataDf)
 library(ggplot2)
 head(DataDf)
-set.seed(100)
+set.seed(150)
 
 setwd("/Users/zeeshan/Desktop/cmpt-318-group4")
 getwd()
@@ -76,8 +76,6 @@ dt = sort(sample(nrow(summer), nrow(summer)*.7))
 train<-summer[dt,]
 test<-summer[-dt,]
 
-
-print(test)
 #Finding Point Anomalies
 p_a<-zoo(c(summer$Global_active_power))
 x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
@@ -103,11 +101,10 @@ for(i in 1:length(x)){
   }
 }
 
-
 #Writing the data frame to a file
 write.table(x,"x.txt",sep="\t",row.names=TRUE)
 write.table(summer,"summer.txt",sep="\t",row.names=TRUE)
-write.table(test$set,"testanomaly.txt",sep="\t",row.names=TRUE)
+write.table(test,"testanomaly.txt",sep="\t",row.names=TRUE)
 
 
 newdata <- DataDf[ which(DataDf$day=='Friday' & DataDf$Hour>=16), ]
