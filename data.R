@@ -37,27 +37,35 @@ returnYear<-function(a){
 }
 
 #Moving Average Point Anomaly Detection
-findPoint<-function(a,threshold){
-  v<-as.vector(a)
+
+movingAverage<-function(average_vector,data,windowsize,threshold,column){
+  v<-as.vector(average_vector)
   x<-c(v$x)
-  print(x[1])
-  for (i in 2:length(x)) { 
-    t1=x[i]  #current Value
-    t2=x[i-1] # prev value
-    diff=t1-t2
-    if(diff>threshold){
-      a$detection[i]<-"Anomaly"
-      print(t1)
-      print(t2)
+  y<-as.vector(data)
+  y_new<-c(data[,column])
+  initial=windowsize+1
+  index<-1
+  for (i in initial:length(y_new)){
+    average<-x[index]
+    data_point<-y_new[i]
+    diff=data_point-average
+    if(is.na(diff)){
+      i=i+1
     }
-    if(diff<threshold){
-      a$detection[i]<-"Normal"
+    else if( diff>threshold){
+      data$detection[i]<-"Anomaly"
     }
+    else {
+      data$detection[i]<-"Normal"
+    }
+    index=index+1
   }
-  return (a)
+  return (data)
 }
 
-#Finding Anomalies using Min, Max from train to test 
+
+
+#Finding Outliers in the Dataset
 find_point<-function(train,test,col){
   find_min<-min(train[,col],na.rm=TRUE)
   find_max<-max(train[,col],na.rm=TRUE)
@@ -106,14 +114,16 @@ update<-data.frame(x)
 
 #Finding Anomalies using Max and Min of Training Set 
 b<-find_point(train,test,'Voltage')
-c<-findPoint(update,0.5)
+c<-findPoint(update,summer$Global_active_power,0.9,15)
+d<-movingAverage(update,summer,15,0.7,'Global_active_power')
+
 
 #Writing the data frame to a file
 write.table(x,"x.txt",sep="\t",row.names=TRUE)
-write.table(summer,"summer.txt",sep="\t",row.names=TRUE)
+write.table(summer$Global_active_power,"summer.txt",sep="\t",row.names=TRUE)
 write.table(b,"testanomaly.txt",sep="\t",row.names=TRUE)
-write.table(train,"updated_train.txt",sep="\t",row.names=TRUE)
-write.table(c,"AverageAnomalies.txt",sep="\t",row.names=TRUE)
+write.table(update,"updated_train.txt",sep="\t",row.names=TRUE)
+write.table(d,"AverageAnomalies.txt",sep="\t",row.names=TRUE)
 ############################################### Global Reactive power and active power 
 
 ggplot()+
