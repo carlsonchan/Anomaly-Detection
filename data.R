@@ -5,8 +5,9 @@ library(ggplot2)
 library(lubridate)
 class(DataDf)
 library(ggplot2)
+library("depmixS4")
 head(DataDf)
-set.seed(150)
+set.seed(1)
 setwd("/Users/zeeshan/Desktop/cmpt-318-group4")
 getwd()
 
@@ -32,6 +33,11 @@ returnMinute<-function(a){
 
 returnYear<-function(a){
   x <- format(as.Date(a, format="%d/%m/%Y"),"%Y")
+  new<-as.numeric(x)
+  return (new)
+}
+returnDay<-function(a){
+  x <- format(as.Date(a, format="%d/%m/%Y"),"%d")
   new<-as.numeric(x)
   return (new)
 }
@@ -63,8 +69,23 @@ movingAverage<-function(average_vector,data,windowsize,threshold,column){
   return (data)
 }
 
+#Creating a Validation DataFrame
 
+validation_set<-function(test,window){
+  
+  numberofrow=nrow(test)
+  y=numberofrow/window
+  x=0.70*y #Finding the number of days to select
+  x=floor(x)
+  rowselection=x*window #After getting the number of days we multiply * window size
+  new_row<-rowselection+1
+  vald<-test[1:rowselection,]
+  train<-test[new_row:numberofrow,]
+  MyList<- list("Val"=vald,"Train"=train) 
+  return(MyList)
+  
 
+}
 #Finding Outliers in the Dataset
 find_point<-function(train,test,col){
   find_min<-min(train[,col],na.rm=TRUE)
@@ -88,7 +109,6 @@ find_point<-function(train,test,col){
   }
   return(test)
 }
-
 require(zoo)
 #Adding Columns to Dataset to help subset the Data
 DataDf <- read.table("train.txt", header = T, sep = ",")
@@ -96,39 +116,71 @@ DataDf$day <- weekdays(as.Date(DataDf$Date,'%d/%m/%Y'))
 DataDf$Month<-returnMonth(as.Date(DataDf$Date))
 DataDf$Hour<-returnHour(DataDf$Time)
 DataDf$year<-returnYear(DataDf$Date)
-
+DataDf$day<-returnDay(DataDf$Date)
 #Splitting the data into seasons 
-summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8  & DataDf$day=='Friday' & DataDf$year>=2007 & DataDf$year<=2008),]
+summer<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8),]
 winter<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12 & DataDf$day=='Friday'),]
 spring<-DataDf[which(DataDf$Month>=1 & DataDf$Month<=4 & DataDf$day=='Friday'),]
 
-#Splitting the data into training and test dataset for the summer
-dt = sort(sample(nrow(summer), nrow(summer)*.7))
-train<-summer[dt,]
-test<-summer[-dt,]
+#Splitting the seasons into day and night
+summerday<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8  & DataDf$Hour>=6 & DataDf$Hour<=20),]#6:00am- 8:59pm
+summernight<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8  & DataDf$Hour>=21 & DataDf$Hour<=23),] #9:00pm-11:00pm
+summerdawn<-DataDf[which(DataDf$Month>=5 & DataDf$Month<=8  & DataDf$Hour>=0 & DataDf$Hour<=5),] #12:00am- 6:00am
 
-#Finding Point Anomalies Vector using Moving Average Technique
+
+winterday<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12  & DataDf$Hour>=8 & DataDf$Hour<=18),] #8:00am- 6:59pm
+winternight<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12  & DataDf$Hour>=19 & DataDf$Hour<=23),] #7:00pm-11:00pm
+winterdawn<-DataDf[which(DataDf$Month>=9 & DataDf$Month<=12  & DataDf$Hour>=0 & DataDf$Hour<=7),] #12:00am- 7:00pm
+
+
+#Exploring the Data
+# newrow <- apply(summer, 1, function(x){any(is.na(x))}) #Cleaning the Data Here/ Finding Rows that Have NA
+# final <- summer[!row.has.na,]
+Explore<-summerday[which(summerday$Month==5 & summerday$day>=1  & summerday$day<=10 & summerday$year>=2007),]#6:00am- 8:59pm
+ggplot()+
+  layer(data = Explore, mapping = aes(x=Time, y=Global_active_power, color = Date), geom = "point",stat="identity", position = position_identity()) +
+  coord_cartesian() +
+  scale_x_discrete() +
+  scale_y_continuous() +
+  scale_color_hue()
+
+#Finding Moving Average Vector for a variable
 p_a<-zoo(c(summer$Global_active_power))
 x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
 update<-data.frame(x)
 
 #Finding Anomalies using Max and Min of Training Set 
 b<-find_point(train,test,'Voltage')
-c<-findPoint(update,summer$Global_active_power,0.9,15)
 d<-movingAverage(update,summer,15,0.7,'Global_active_power')
 
 
+#Exploring the Dataset
+ggplot()+
+  layer(data = DataDf, mapping = aes(x=Date, y=Voltage), geom = "point",stat="identity", position = position_identity()) +
+  coord_cartesian() +
+  scale_x_discrete() +
+  scale_y_continuous()
+
+#Training HMM
+list=validation_set(summerday,900)
+val<-list$Val
+train<-list$Train
+print(nrow(summerday_validation))
+mod1 <- depmix(response = train$Global_active_power ~ 1, data = train, nstates = 15)
+fm1 <- fit(mod1)
+summary(fm1)
+print(fm1)
+
+
 #Writing the data frame to a file
-write.table(x,"x.txt",sep="\t",row.names=TRUE)
+write.table(summerday,"weekend.txt",sep="\t",row.names=TRUE)
 write.table(summer$Global_active_power,"summer.txt",sep="\t",row.names=TRUE)
 write.table(b,"testanomaly.txt",sep="\t",row.names=TRUE)
 write.table(update,"updated_train.txt",sep="\t",row.names=TRUE)
 write.table(d,"AverageAnomalies.txt",sep="\t",row.names=TRUE)
 ############################################### Global Reactive power and active power 
 
-ggplot()+
-  layer(data = summer, mapping = aes(x=Voltage, y=Global_active_power), geom = "point",stat="identity", position = position_identity())
-
+#Functions for Data Exploration
 cor(DataDf$Global_reactive_power, DataDf$Global_active_power, use = "complete.obs", method = "pearson")
 v_mean <- mean(DataDf$Global_reactive_power, na.rm = TRUE)
 v_median <- median(DataDf$Global_reactive_power, na.rm = TRUE)
@@ -137,10 +189,4 @@ v_mean2 <- mean(DataDf$Global_active_power, na.rm = TRUE)
 v_median2 <- median(DataDf$Global_active_power, na.rm = TRUE)
 v_sd2 <- sd(DataDf$Global_active_power, na.rm = TRUE)
 
-print(v_mean)
-print(v_median)
-print(v_sd)
-print(v_mean2)
-print(v_median2)
-print(v_sd2)
 
