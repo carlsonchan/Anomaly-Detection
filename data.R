@@ -166,7 +166,7 @@ list=validation_set(summerday,900)
 val<-list$Val
 train<-list$Train
 print(nrow(summerday_validation))
-mod1 <- depmix(response = train$Global_active_power ~ 1, data = train, nstates = 15)
+mod1 <- depmix(response = train$Global_active_power ~ 1, data = train, nstates = 9)
 fm1 <- fit(mod1)
 summary(fm1)
 print(fm1)
