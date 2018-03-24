@@ -172,7 +172,7 @@ print(fm1)
 
 
 #Writing the data frame to a file
-write.table(summerday,"weekend.txt",sep="\t",row.names=TRUE)
+write.table(update,"vector.txt",sep="\t",row.names=TRUE)
 write.table(summer$Global_active_power,"summer.txt",sep="\t",row.names=TRUE)
 write.table(b,"testanomaly.txt",sep="\t",row.names=TRUE)
 write.table(update,"updated_train.txt",sep="\t",row.names=TRUE)
