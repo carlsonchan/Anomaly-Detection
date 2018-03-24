@@ -146,7 +146,7 @@ ggplot()+
 
 #Finding Moving Average Vector for a variable
 p_a<-zoo(c(summer$Global_active_power))
-x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
+x<-rollapply(p_a,width=15,by=1,FUN=mean,align="left")
 update<-data.frame(x)
 
 #Finding Anomalies using Max and Min of Training Set 
