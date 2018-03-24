@@ -79,9 +79,9 @@ validation_set<-function(test,window){
   x=floor(x)
   rowselection=x*window #After getting the number of days we multiply * window size
   new_row<-rowselection+1
-  vald<-test[1:rowselection,]
-  train<-test[new_row:numberofrow,]
-  MyList<- list("Val"=vald,"Train"=train) 
+  train<-test[1:rowselection,]
+  vald<-test[new_row:numberofrow,]
+  MyList<- list("Train"=train,"Val"=vald) 
   return(MyList)
   
 
@@ -150,7 +150,7 @@ x<-rollapply(p_a,width=15,by=14,FUN=mean,align="left")
 update<-data.frame(x)
 
 #Finding Anomalies using Max and Min of Training Set 
-b<-find_point(train,test,'Voltage')
+#b<-find_point(train,test,'Voltage')
 d<-movingAverage(update,summer,15,0.7,'Global_active_power')
 
 
@@ -162,11 +162,10 @@ ggplot()+
   scale_y_continuous()
 
 #Training HMM
-list=validation_set(summerday,900)
-val<-list$Val
-train<-list$Train
-print(nrow(summerday_validation))
-mod1 <- depmix(response = train$Global_active_power ~ 1, data = train, nstates = 9)
+list=validation_set(summerday,900) # Make sure to change the window if the dataset i s changed 
+val<-list$Val #30% OF THE DATA
+train<-list$Train #70% OF THE DATA
+mod1 <- depmix(response = train$Global_active_power ~ 1, data = train, nstates = 8)
 fm1 <- fit(mod1)
 summary(fm1)
 print(fm1)
