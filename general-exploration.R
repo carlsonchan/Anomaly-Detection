@@ -30,19 +30,17 @@ min_GA <- min(meanGlobalActive$Average)
 
 ggplot(meanGlobalActive, aes(x=,month, y=Average)) + geom_boxplot() + facet_wrap(~year) +labs(y = "Average Global Active Power per day between 6PM-11PM")
 
-summer <- meanGlobalActive[which(meanGlobalActive$Month>=6 & meanGlobalActive$Month<=9),] # Extracting summer momnth June-Sept
+# Zoomed in version of the summer boxplot
+summer <- meanGlobalActive[which(meanGlobalActive$Month>=5 & meanGlobalActive$Month<=8),] # Extracting summer momnth May - Aug
 ggplot(summer, aes(x=,month, y=Average)) + geom_boxplot() + facet_wrap(~year) + labs(x = "Summer Months of 2007-2009") + labs(y = "Average Global Active Power")
+ggplot(summer, aes(x=,Date, y=Average, group=1))+facet_wrap(~year)+geom_line()
 
-cor(summer[which(summer$year==2007),]$Average, summer[which(summer$year==2008),]$Average, use = "complete.obs", method = "pearson")
-cor(summer[which(summer$year==2007),]$Average, summer[which(summer$year==2009),]$Average, use = "complete.obs", method = "pearson")
-cor(summer[which(summer$year==2008),]$Average, summer[which(summer$year==2009),]$Average, use = "complete.obs", method = "pearson")
+# Change number to extract specific year's summer for line graph
+summer2007<-summer[which(summer$year==2007),]
+ggplot(summer2007, aes(x=,Date, y=Average, group=1))+geom_line() +labs(y = "Average Global Active Power Per day")+labs(x = "May 1st 2007 - Aug 31st")
 
-cor(afterWork$Global_active_power, afterWork$Global_reactive_power, use = "complete.obs", method = "pearson")
-cor(afterWork$Global_active_power, afterWork$Global_intensity, use = "complete.obs", method = "pearson")
-cor(afterWork$Global_active_power, afterWork$Voltage, use = "complete.obs", method = "pearson")
-cor(afterWork$Global_reactive_power, afterWork$Global_intensity, use = "complete.obs", method = "pearson")
-cor(afterWork$Global_reactive_power, afterWork$Voltage, use = "complete.obs", method = "pearson")
-cor(afterWork$Global_intensity, afterWork$Voltage, use = "complete.obs", method = "pearson")
+
+
 
 #Global reactive power
 meanGlobalReactive<-returnMean(afterWork, 'Global_reactive_power')
@@ -76,6 +74,14 @@ max_GI <- max(meanGlobalIntensity$Average)
 min_GI <- min(meanGlobalIntensity$Average)
 
 ggplot(meanGlobalIntensity, aes(x=,month, y=Average)) + geom_boxplot() + facet_wrap(~year) +labs(y = "Average Global Intensity per day between 6PM-11PM")
+
+# Feature correlation
+cor(afterWork$Global_active_power, afterWork$Global_reactive_power, use = "complete.obs", method = "pearson")
+cor(afterWork$Global_active_power, afterWork$Global_intensity, use = "complete.obs", method = "pearson")
+cor(afterWork$Global_active_power, afterWork$Voltage, use = "complete.obs", method = "pearson")
+cor(afterWork$Global_reactive_power, afterWork$Global_intensity, use = "complete.obs", method = "pearson")
+cor(afterWork$Global_reactive_power, afterWork$Voltage, use = "complete.obs", method = "pearson")
+cor(afterWork$Global_intensity, afterWork$Voltage, use = "complete.obs", method = "pearson")
 
 #Functions for Data Exploration
 cor(DataDf$Global_reactive_power, DataDf$Global_active_power, use = "complete.obs", method = "pearson")
